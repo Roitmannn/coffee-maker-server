@@ -1,5 +1,5 @@
-.env
-.env.*
+backend/.env
+backend/.env.*
 !.env.example
 
 # dependencies
@@ -14,3 +14,6 @@ logs/
 Thumbs.db
 .vscode/
 .idea/
+
+# nginx / certs (do not commit private keys)
+infra/nginx/ssl/*

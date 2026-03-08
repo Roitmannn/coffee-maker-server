@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: coffee_backend
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - coffee_net
+
+  nginx:
+    image: nginx:alpine
+    container_name: coffee_nginx
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../frontend:/usr/share/nginx/html:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - coffee_net
+
+networks:
+  coffee_net:
+    driver: bridge

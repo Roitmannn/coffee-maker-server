@@ -1,5 +1,4 @@
 const express = require('express');
-const path = require('path');
 const { requestLogger } = require('./middleware/requestLogger');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 
@@ -17,9 +16,6 @@ function createApp() {
 
   app.use(express.json({ limit: '64kb' }));
   app.use(requestLogger);
-
-  // Static admin UI
-  app.use(express.static(path.join(__dirname, 'public')));
 
   app.use('/api', healthRoutes);
   app.use('/api/coffee', coffeeRoutes);

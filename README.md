@@ -14,36 +14,28 @@ Small, production-minded **Node.js + Express** server for coffee automation with
 
 ```
 coffee-maker/
-  app.js
-  server.js
-  package.json
-  .env.example
   README.md
-  config/
-    env.js
-  controllers/
-    coffeeController.js
-    debugController.js
-    deviceController.js
-    healthController.js
-  middleware/
-    auth.js
-    errorHandler.js
-    requestLogger.js
-  routes/
-    coffeeRoutes.js
-    debugRoutes.js
-    deviceRoutes.js
-    healthRoutes.js
-  services/
-    coffeeCommandService.js
-    deviceHealthService.js
-    deviceStore.js
-  utils/
-    errors.js
-    ids.js
-    logger.js
-    time.js
+  backend/
+    server.js
+    app.js
+    package.json
+    package-lock.json
+    .env.example
+    Dockerfile
+    config/
+    controllers/
+    middleware/
+    routes/
+    services/
+    utils/
+  frontend/
+    index.html
+    app.js
+    app.css
+  infra/
+    docker-compose.yml
+    nginx/
+      default.conf
 ```
 
 ## Setup
@@ -55,6 +47,7 @@ coffee-maker/
 ### Install
 
 ```bash
+cd backend
 npm install
 ```
 
@@ -69,12 +62,14 @@ Copy `.env.example` to `.env` and fill in secrets:
 ### Run locally
 
 ```bash
+cd backend
 npm start
 ```
 
 Dev mode with auto-reload:
 
 ```bash
+cd backend
 npm run dev
 ```
 
@@ -267,9 +262,11 @@ This works well with a VM + systemd (`journalctl -u ...`) and also keeps a tail-
 
 ## Admin UI (dashboard)
 
-This server now ships with a small admin UI served from the same process.
+This server now ships with a small admin UI.
 
-- **URL**: open `/` in your browser (e.g. `http://<server>:3000/`)
+- **URL**:
+  - when running behind Nginx (docker-compose): `http://<server>/`
+  - when running backend directly: serve `frontend/` with any static server and point it at the same host’s `/api/*`
 - **Auth**: enter your `ADMIN_TOKEN` when prompted (stored in browser session only)
 
 What it shows:
@@ -281,6 +278,42 @@ Admin API endpoints (same token):
 - `GET /api/admin/overview` (header `x-admin-token: <ADMIN_TOKEN>`)
 - `POST /api/admin/coffee/make` (header `x-admin-token: <ADMIN_TOKEN>`)
   - body: `{ "device_id": "coffee1", "action": "brew" }`
+
+## Docker Compose + Nginx (recommended on a VM)
+
+This repo includes:
+- **backend**: Node/Express API container
+- **nginx**: serves static UI from `frontend/` and reverse-proxies `/api/*` to backend
+
+Files:
+- `infra/docker-compose.yml`
+- `backend/Dockerfile`
+- `infra/nginx/default.conf`
+- `frontend/` (static UI)
+
+Run (on a machine with Docker installed):
+
+```bash
+docker compose -f infra/docker-compose.yml up -d --build
+```
+
+Then open:
+- UI: `http://<server>/`
+- API health: `http://<server>/api/health`
+
+### TLS/SSL (Nginx on 443 + redirect 80→443)
+
+This stack is configured for HTTPS on **443** and an HTTP redirect from **80 → 443**.
+
+Place your certs here (these files are git-ignored):
+- `infra/nginx/ssl/cert.pem`
+- `infra/nginx/ssl/key.pem`
+
+Restart nginx:
+
+```bash
+docker compose -f infra/docker-compose.yml up -d --force-recreate nginx
+```
 
 ## Deployment notes (DigitalOcean App Platform)
 
