@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Coffee Maker Admin</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title">Coffee Maker</div>
+          <div class="brand-sub">Admin dashboard</div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="pill" id="serverTime">—</div>
+        <button class="btn btn-ghost" id="refreshBtn" type="button">Refresh</button>
+        <button class="btn btn-ghost" id="clearTokenBtn" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="grid">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Make coffee</div>
+              <div class="card-sub">Enqueue a new pending command (simulated client)</div>
+            </div>
+          </div>
+
+          <form id="makeForm" class="form">
+            <label class="field">
+              <span class="label">Device</span>
+              <div class="row">
+                <select id="deviceSelect" class="input"></select>
+                <input
+                  id="deviceManual"
+                  class="input"
+                  placeholder="or type device_id (e.g. coffee1)"
+                  autocomplete="off"
+                />
+              </div>
+            </label>
+
+            <label class="field">
+              <span class="label">Action</span>
+              <select id="actionSelect" class="input">
+                <option value="brew">brew</option>
+                <option value="press">press</option>
+                <option value="sequence">sequence</option>
+              </select>
+            </label>
+
+            <div class="row">
+              <button class="btn btn-primary" id="makeBtn" type="submit">Make coffee</button>
+              <div class="hint" id="makeHint">—</div>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Pending commands</div>
+              <div class="card-sub">Current queue (one pending per device in v1)</div>
+            </div>
+            <div class="pill" id="pendingCount">0</div>
+          </div>
+          <div class="table-wrap">
+            <table class="table" id="pendingTable">
+              <thead>
+                <tr>
+                  <th>device_id</th>
+                  <th>command_id</th>
+                  <th>action</th>
+                  <th>created</th>
+                  <th>expires</th>
+                  <th>status</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Command history</div>
+            <div class="card-sub">Acknowledged / expired commands (last 10 per device)</div>
+          </div>
+          <div class="pill" id="historyCount">0</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" id="historyTable">
+            <thead>
+              <tr>
+                <th>device_id</th>
+                <th>command_id</th>
+                <th>action</th>
+                <th>status</th>
+                <th>created</th>
+                <th>acknowledged</th>
+                <th>message</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="modal-backdrop" id="authModal">
+      <div class="modal">
+        <div class="modal-title">Admin token required</div>
+        <div class="modal-sub">
+          Enter your <code>ADMIN_TOKEN</code>. It will be stored in this browser session only.
+        </div>
+
+        <form id="authForm" class="form">
+          <label class="field">
+            <span class="label">Admin token</span>
+            <input id="tokenInput" class="input" type="password" placeholder="ADMIN_TOKEN" />
+          </label>
+          <div class="row">
+            <button class="btn btn-primary" type="submit">Continue</button>
+            <div class="hint" id="authHint">—</div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
+

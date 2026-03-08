@@ -1,0 +1,28 @@
+{
+  "name": "coffee-automation-polling-server",
+  "version": "1.0.0",
+  "description": "Production-minded Node.js + Express polling server for coffee automation devices (ESP32).",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "express",
+    "esp32",
+    "iot",
+    "coffee",
+    "polling"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
+

@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+
+# dependencies
+node_modules/
+
+# logs (especially if you set LOG_FILE)
+*.log
+logs/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
