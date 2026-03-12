@@ -147,6 +147,8 @@ Body:
 - `status` (optional, default `"done"`)
 - `message` (optional)
 
+
+
 Notes:
 - Updates `lastSeenAt` heartbeat for the device.
 - Moves acknowledged commands into a small per-device history (last 10).
