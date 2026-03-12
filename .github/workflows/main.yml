@@ -23,7 +23,7 @@ jobs:
     # Step 3: SSH into the server and deploy
     - name: Deploy via SSH
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ vars.USER }}@${{ vars.SERVER_IP }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.SERVER_IP }} << 'EOF'
           cd coffee-maker-server
           git pull origin main
           docker-compose -f docker-compose.prod.yml down
