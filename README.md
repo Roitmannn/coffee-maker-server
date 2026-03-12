@@ -309,6 +309,18 @@ Place your certs here (these files are git-ignored):
 - `infra/nginx/ssl/cert.pem`
 - `infra/nginx/ssl/key.pem`
 
+Generate a self-signed cert (dev / quick test):
+
+```bash
+./infra/scripts/generate-self-signed-cert.sh your-domain.com
+```
+
+On Windows (requires `openssl` in PATH):
+
+```powershell
+.\infra\scripts\generate-self-signed-cert.ps1 -CN "your-domain.com"
+```
+
 Restart nginx:
 
 ```bash

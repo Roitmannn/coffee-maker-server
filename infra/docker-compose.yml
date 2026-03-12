@@ -1,4 +1,21 @@
 services:
+  certgen:
+    image: alpine:3.20
+    container_name: coffee_certgen
+    restart: "no"
+    working_dir: /work
+    command: >
+      sh -c "apk add --no-cache openssl &&
+      mkdir -p /work &&
+      if [ ! -f /work/cert.pem ] || [ ! -f /work/key.pem ]; then
+      echo 'Generating self-signed certificate...' &&
+      openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes -subj '/CN=localhost' -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1' -keyout /work/key.pem -out /work/cert.pem;
+      else
+      echo 'Certificate already exists. Skipping generation.';
+      fi"
+    volumes:
+      - ./nginx/ssl:/work
+
   backend:
     build:
       context: ../backend
@@ -18,6 +35,8 @@ services:
     container_name: coffee_nginx
     restart: unless-stopped
     depends_on:
+      certgen:
+        condition: service_completed_successfully
       backend:
         condition: service_healthy
     ports:

@@ -4,8 +4,6 @@ const { logger } = require('../utils/logger');
 
 function requireApiKey(req, _res, next) {
   const key = req.header('x-api-key');
-  console.log('env', env);
-  console.log('key', key);
   if (!env.apiKey || key !== env.apiKey) {
     logger.warn('auth_failure_api_key', { path: req.originalUrl, ip: req.ip });
     return next(createHttpError(401, 'unauthorized', 'Invalid API key'));
@@ -15,7 +13,6 @@ function requireApiKey(req, _res, next) {
 
 function requireAdmin(req, _res, next) {
   const token = req.header('x-admin-token') || req.header('x-api-key');
-  console.log('env', env);
 
   if (!env.adminToken || token !== env.adminToken) {
     logger.warn('auth_failure_admin', { path: req.originalUrl, ip: req.ip });
@@ -35,7 +32,8 @@ function requireDeviceToken(req, _res, next) {
 
   if (!deviceId) return next(createHttpError(400, 'validation_error', 'device_id is required'));
 
-  const expected = deviceTokenFor(deviceId);
+  const expected = env.deviceToken;
+  
   if (!expected || token !== expected) {
     logger.warn('auth_failure_device_token', {
       device_id: deviceId,
