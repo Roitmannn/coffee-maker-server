@@ -5,6 +5,10 @@ function $(id) {
   return document.getElementById(id);
 }
 
+function byIdOrNull(id) {
+  return document.getElementById(id) || null;
+}
+
 function getToken() {
   return sessionStorage.getItem(STORAGE_KEY) || '';
 }
@@ -18,7 +22,8 @@ function clearToken() {
 }
 
 function showToast(message) {
-  const el = $('toast');
+  const el = byIdOrNull('toast');
+  if (!el) return;
   el.textContent = message;
   el.classList.add('show');
   window.clearTimeout(showToast._t);
@@ -79,16 +84,22 @@ function escapeHtml(text) {
     .replaceAll("'", '&#039;');
 }
 
-function deviceIdFromForm(overview) {
-  const manual = $('deviceManual').value.trim();
+function deviceIdFromForm() {
+  const manualInput = byIdOrNull('deviceManual');
+  if (!manualInput) return '';
+  const manual = manualInput.value.trim();
   return manual;
 }
 
 function renderPending(pendingCommands) {
-  const tbody = $('pendingTable').querySelector('tbody');
+  const table = byIdOrNull('pendingTable');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
-  $('pendingCount').textContent = String((pendingCommands || []).length);
+  const pendingCount = byIdOrNull('pendingCount');
+  if (pendingCount) pendingCount.textContent = String((pendingCommands || []).length);
 
   for (const cmd of pendingCommands || []) {
     const tr = document.createElement('tr');
@@ -115,7 +126,10 @@ function renderPending(pendingCommands) {
 }
 
 function renderHistory(history) {
-  const tbody = $('historyTable').querySelector('tbody');
+  const table = byIdOrNull('historyTable');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   const list = (history || []).slice(0, 80);
@@ -164,12 +178,17 @@ function normalizeHealth(device) {
 }
 
 function renderDeviceHealth(devices) {
-  const tbody = $('healthTable').querySelector('tbody');
+  const table = byIdOrNull('healthTable');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
-  const rows = (devices || []).map(normalizeHealth).sort((a, b) => a.deviceId.localeCompare(b.deviceId));
+  const list = Array.isArray(devices) ? devices : [];
+  const rows = list.map(normalizeHealth).sort((a, b) => a.deviceId.localeCompare(b.deviceId));
   const alive = rows.filter((r) => r.isConnected).length;
-  $('aliveCount').textContent = `${alive} / ${rows.length} alive`;
+  const aliveCount = byIdOrNull('aliveCount');
+  if (aliveCount) aliveCount.textContent = `${alive} / ${rows.length} alive`;
 
   for (const row of rows) {
     const tr = document.createElement('tr');
@@ -204,19 +223,23 @@ async function refresh() {
     const data = await api('/api/admin/overview', { method: 'GET' });
     lastOverview = data;
 
-    $('serverTime').textContent = data.server_time ? `server: ${isoShort(data.server_time)}` : '—';
-    $('makeHint').textContent = 'Ready';
+    const serverTime = byIdOrNull('serverTime');
+    if (serverTime) serverTime.textContent = data.server_time ? `server: ${isoShort(data.server_time)}` : '—';
+    const makeHint = byIdOrNull('makeHint');
+    if (makeHint) makeHint.textContent = 'Ready';
 
     renderPending(data.pending_commands || []);
     renderDeviceHealth(data.devices || []);
     renderHistory(data.history || []);
   } catch (err) {
     if (err && err.status === 401) {
-      $('authHint').textContent = 'Invalid token (401). Please try again.';
+      const authHint = byIdOrNull('authHint');
+      if (authHint) authHint.textContent = 'Invalid token (401). Please try again.';
       showAuthModal(true);
     } else {
       showToast(err.message || 'Refresh failed');
-      $('makeHint').textContent = err.message || 'Refresh failed';
+      const makeHint = byIdOrNull('makeHint');
+      if (makeHint) makeHint.textContent = err.message || 'Refresh failed';
     }
   } finally {
     busy = false;
@@ -224,7 +247,8 @@ async function refresh() {
 }
 
 function showAuthModal(show) {
-  const modal = $('authModal');
+  const modal = byIdOrNull('authModal');
+  if (!modal) return;
   modal.classList.toggle('show', Boolean(show));
 }
 
@@ -241,63 +265,80 @@ function stopPolling() {
 async function onMakeSubmit(e) {
   e.preventDefault();
 
-  const deviceId = deviceIdFromForm(lastOverview);
-  const action = $('actionSelect').value || 'brew';
+  const deviceId = deviceIdFromForm();
+  const actionEl = byIdOrNull('actionSelect');
+  const action = (actionEl && actionEl.value) || 'brew';
   if (!deviceId) {
     showToast('Please enter a device_id.');
     return;
   }
 
-  $('makeHint').textContent = 'Enqueueing…';
+  const makeHint = byIdOrNull('makeHint');
+  if (makeHint) makeHint.textContent = 'Enqueueing...';
   try {
     const result = await api('/api/admin/coffee/make', {
       method: 'POST',
       body: JSON.stringify({ device_id: deviceId, action })
     });
     showToast(`Enqueued ${result.command && result.command.command_id ? result.command.command_id : 'command'}`);
-    $('makeHint').textContent = 'Enqueued';
+    if (makeHint) makeHint.textContent = 'Enqueued';
     await refresh();
   } catch (err) {
     showToast(err.message || 'Failed to enqueue');
-    $('makeHint').textContent = err.message || 'Failed to enqueue';
+    if (makeHint) makeHint.textContent = err.message || 'Failed to enqueue';
   }
 }
 
 function wireUi() {
-  $('refreshBtn').addEventListener('click', refresh);
-  $('clearTokenBtn').addEventListener('click', () => {
-    clearToken();
-    stopPolling();
-    showAuthModal(true);
-    showToast('Signed out');
-  });
+  const refreshBtn = byIdOrNull('refreshBtn');
+  if (refreshBtn) refreshBtn.addEventListener('click', refresh);
 
-  $('makeForm').addEventListener('submit', onMakeSubmit);
+  const clearTokenBtn = byIdOrNull('clearTokenBtn');
+  if (clearTokenBtn) {
+    clearTokenBtn.addEventListener('click', () => {
+      clearToken();
+      stopPolling();
+      showAuthModal(true);
+      showToast('Signed out');
+    });
+  }
 
-  $('authForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const token = $('tokenInput').value.trim();
-    if (!token) {
-      $('authHint').textContent = 'Please enter a token.';
-      return;
-    }
+  const makeForm = byIdOrNull('makeForm');
+  if (makeForm) makeForm.addEventListener('submit', onMakeSubmit);
 
-    $('authHint').textContent = 'Checking…';
-    setToken(token);
-    try {
+  const authForm = byIdOrNull('authForm');
+  if (authForm) {
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const tokenInput = byIdOrNull('tokenInput');
+      const token = tokenInput ? tokenInput.value.trim() : '';
+      const authHint = byIdOrNull('authHint');
+      if (!token) {
+        if (authHint) authHint.textContent = 'Please enter a token.';
+        return;
+      }
+
+      if (authHint) authHint.textContent = 'Checking...';
+      setToken(token);
+      try {
+        await refresh();
+        showAuthModal(false);
+        showToast('Signed in');
+        startPolling();
+      } catch {
+        // refresh() will handle modal/errors
+      }
+    });
+  }
+
+  const clearHistoryBtn = byIdOrNull('clearHistoryBtn');
+  if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener('click', async () => {
+      await api('/api/admin/history', { method: 'DELETE' });
       await refresh();
-      showAuthModal(false);
-      showToast('Signed in');
-      startPolling();
-    } catch {
-      // refresh() will handle modal/errors
-    }
-  });
-  $('clearHistoryBtn').addEventListener('click', async () => {
-    await api('/api/admin/history', { method: 'DELETE' });
-    await refresh();
-    showToast('History cleared');
-  });
+      showToast('History cleared');
+    });
+  }
 }
 
 async function init() {
@@ -305,7 +346,8 @@ async function init() {
 
   if (!getToken()) {
     showAuthModal(true);
-    $('authHint').textContent = 'Enter ADMIN_TOKEN to continue.';
+    const authHint = byIdOrNull('authHint');
+    if (authHint) authHint.textContent = 'Enter ADMIN_TOKEN to continue.';
     return;
   }
 

@@ -82,6 +82,7 @@ async function clearHistory(req, res, next) {
     for (const device of devices) {
       device.history = [];
     }
+    res.status(200).json({ success: true });
   } catch (err) {
     next(err);
   }
