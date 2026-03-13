@@ -38,15 +38,12 @@
           <form id="makeForm" class="form">
             <label class="field">
               <span class="label">Device</span>
-              <div class="row">
-                <select id="deviceSelect" class="input"></select>
-                <input
-                  id="deviceManual"
-                  class="input"
-                  placeholder="or type device_id (e.g. coffee1)"
-                  autocomplete="off"
-                />
-              </div>
+              <input
+                id="deviceManual"
+                class="input"
+                placeholder="type device_id (e.g. coffee1)"
+                autocomplete="off"
+              />
             </label>
 
             <label class="field">
@@ -94,10 +91,33 @@
       <section class="card">
         <div class="card-head">
           <div>
+            <div class="card-title">Device health</div>
+            <div class="card-sub">Connected if seen in the last 2 minutes</div>
+          </div>
+          <div class="pill" id="aliveCount">0 / 0 alive</div>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="healthTable">
+            <thead>
+              <tr>
+                <th>device_id</th>
+                <th>status</th>
+                <th>last alive</th>
+                <th>seconds since alive</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
             <div class="card-title">Command history</div>
             <div class="card-sub">Acknowledged / expired commands (last 10 per device)</div>
           </div>
-          <div class="pill" id="historyCount">0</div>
+          <button class="btn btn-ghost" id="clearHistoryBtn" type="button">Clear history</button>
         </div>
 
         <div class="table-wrap">

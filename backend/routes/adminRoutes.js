@@ -11,5 +11,8 @@ router.get('/overview', requireAdmin, adminController.overview);
 // This simulates an external webhook client, but uses ADMIN_TOKEN instead of API_KEY.
 router.post('/coffee/make', requireAdmin, adminController.makeCoffee);
 
+// Clear the command history for all devices (admin-only).
+router.delete('/history', requireAdmin, adminController.clearHistory);
+
 module.exports = router;
 

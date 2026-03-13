@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'coffee_admin_token';
+const DISCONNECTED_AFTER_SECONDS = 120;
 
 function $(id) {
   return document.getElementById(id);
@@ -63,6 +64,12 @@ function statusTag(status) {
   return `<span class="${cls}">${escapeHtml(status || '—')}</span>`;
 }
 
+function connectionTag(isConnected) {
+  return isConnected
+    ? '<span class="tag tag-good">connected</span>'
+    : '<span class="tag tag-bad">disconnected</span>';
+}
+
 function escapeHtml(text) {
   return String(text || '')
     .replaceAll('&', '&amp;')
@@ -74,39 +81,7 @@ function escapeHtml(text) {
 
 function deviceIdFromForm(overview) {
   const manual = $('deviceManual').value.trim();
-  if (manual) return manual;
-
-  const selected = $('deviceSelect').value;
-  if (selected) return selected;
-
-  // If no devices exist yet, user must type it.
-  const fallback =
-    (overview &&
-      overview.devices &&
-      overview.devices[0] &&
-      (overview.devices[0].device_id || overview.devices[0].deviceId)) ||
-    '';
-  return fallback;
-}
-
-function renderDeviceSelect(overview) {
-  const select = $('deviceSelect');
-  const devices = (overview && overview.devices) || [];
-  const ids = devices.map((d) => d.device_id).filter(Boolean);
-  ids.sort();
-
-  select.innerHTML = '';
-  const opt0 = document.createElement('option');
-  opt0.value = '';
-  opt0.textContent = ids.length ? 'Select device…' : 'No devices yet';
-  select.appendChild(opt0);
-
-  for (const id of ids) {
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = id;
-    select.appendChild(opt);
-  }
+  return manual;
 }
 
 function renderPending(pendingCommands) {
@@ -144,7 +119,8 @@ function renderHistory(history) {
   tbody.innerHTML = '';
 
   const list = (history || []).slice(0, 80);
-  $('historyCount').textContent = String(history ? history.length : 0);
+  const historyCount = $('historyCount');
+  if (historyCount) historyCount.textContent = String(history ? history.length : 0);
 
   for (const cmd of list) {
     const tr = document.createElement('tr');
@@ -171,6 +147,52 @@ function renderHistory(history) {
   }
 }
 
+function normalizeHealth(device) {
+  const health = (device && device.health) || {};
+  const secondsSinceRaw = health.seconds_since_last_seen;
+  const secondsSince =
+    Number.isFinite(Number(secondsSinceRaw)) && Number(secondsSinceRaw) >= 0
+      ? Number(secondsSinceRaw)
+      : null;
+  const isConnected = secondsSince !== null && secondsSince <= DISCONNECTED_AFTER_SECONDS;
+  return {
+    deviceId: (device && (device.device_id || device.deviceId)) || 'unknown',
+    isConnected,
+    lastSeenAt: health.last_seen_at || null,
+    secondsSince
+  };
+}
+
+function renderDeviceHealth(devices) {
+  const tbody = $('healthTable').querySelector('tbody');
+  tbody.innerHTML = '';
+
+  const rows = (devices || []).map(normalizeHealth).sort((a, b) => a.deviceId.localeCompare(b.deviceId));
+  const alive = rows.filter((r) => r.isConnected).length;
+  $('aliveCount').textContent = `${alive} / ${rows.length} alive`;
+
+  for (const row of rows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(row.deviceId)}</td>
+      <td>${connectionTag(row.isConnected)}</td>
+      <td>${escapeHtml(isoShort(row.lastSeenAt))}</td>
+      <td>${row.secondsSince === null ? '—' : escapeHtml(String(row.secondsSince))}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  if (rows.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td colspan="4" style="color: rgba(255,255,255,0.55); font-family: var(--sans);">
+        No devices yet. A device appears after it sends a poll/ack or gets a command.
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
 let lastOverview = null;
 let pollingTimer = null;
 let busy = false;
@@ -185,8 +207,8 @@ async function refresh() {
     $('serverTime').textContent = data.server_time ? `server: ${isoShort(data.server_time)}` : '—';
     $('makeHint').textContent = 'Ready';
 
-    renderDeviceSelect(data);
     renderPending(data.pending_commands || []);
+    renderDeviceHealth(data.devices || []);
     renderHistory(data.history || []);
   } catch (err) {
     if (err && err.status === 401) {
@@ -270,6 +292,11 @@ function wireUi() {
     } catch {
       // refresh() will handle modal/errors
     }
+  });
+  $('clearHistoryBtn').addEventListener('click', async () => {
+    await api('/api/admin/history', { method: 'DELETE' });
+    await refresh();
+    showToast('History cleared');
   });
 }
 

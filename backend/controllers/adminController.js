@@ -76,5 +76,16 @@ async function makeCoffee(req, res, next) {
   }
 }
 
-module.exports = { overview, makeCoffee };
+async function clearHistory(req, res, next) {
+  try {
+    const devices = getAllDeviceStates();
+    for (const device of devices) {
+      device.history = [];
+    }
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { overview, makeCoffee, clearHistory };
 
